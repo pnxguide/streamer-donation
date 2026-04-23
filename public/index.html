@@ -12,21 +12,29 @@
 
     body {
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       background: #0f0f1a;
       color: #e0e0e0;
+      padding: 24px 16px;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom));
     }
 
     .card {
       background: #1a1a2e;
       border: 1px solid #2a2a4a;
       border-radius: 16px;
-      padding: 40px 36px;
+      padding: 28px 20px;
       width: 100%;
       max-width: 460px;
       box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+
+    @media (min-width: 520px) {
+      body { align-items: center; padding: 40px 24px; }
+      .card { padding: 40px 36px; }
     }
 
     .logo {
@@ -112,9 +120,10 @@
       border-radius: 8px;
       padding: 12px 14px;
       color: #e0e0e0;
-      font-size: 15px;
+      font-size: 16px; /* 16px prevents iOS auto-zoom on focus */
       outline: none;
       transition: border-color 0.2s;
+      -webkit-appearance: none;
     }
 
     input:focus, textarea:focus { border-color: #a855f7; }
@@ -144,7 +153,7 @@
     }
 
     .preset-btn {
-      padding: 6px 16px;
+      padding: 10px 16px;
       border-radius: 20px;
       border: 1px solid #2a2a4a;
       background: transparent;
@@ -152,9 +161,11 @@
       font-size: 14px;
       cursor: pointer;
       transition: all 0.15s;
+      min-height: 44px; /* iOS minimum tap target */
     }
 
     .preset-btn:hover { border-color: #a855f7; color: #a855f7; }
+    .preset-btn:active { background: rgba(168,85,247,0.1); border-color: #a855f7; color: #a855f7; }
 
     .submit-btn {
       width: 100%;
