@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pkill -f \"node server.js\")",
+      "Bash(node /Users/pnx/Project/DonationMimic/server.js)",
+      "Bash(curl -s \"http://localhost:3000/api/tts?text=สวัสดี\" -o /tmp/test.mp3 -w \"%{http_code}\")",
+      "Bash(curl -s \"http://localhost:3000/api/tts?text=hello\" -o /tmp/test.mp3 -w \"%{http_code}\")"
+    ]
+  }
+}

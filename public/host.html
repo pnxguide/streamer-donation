@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Donation Overlay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Anuphan', system-ui, sans-serif; }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    /* ── Gate screens (password + sound unlock) ── */
+    .gate {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      z-index: 99999;
+    }
+
+    .gate.hidden { display: none; }
+
+    .gate-icon { font-size: 48px; }
+
+    .gate-title {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .gate-sub {
+      font-size: 15px;
+      color: rgba(255,255,255,0.4);
+    }
+
+    .gate input[type="password"] {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 12px 18px;
+      color: #fff;
+      font-size: 17px;
+      width: 280px;
+      outline: none;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+
+    .gate input[type="password"]:focus { border-color: #a855f7; }
+
+    .gate-btn {
+      background: linear-gradient(135deg, #a855f7, #6366f1);
+      border: none;
+      border-radius: 10px;
+      padding: 12px 32px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 280px;
+      transition: opacity 0.2s;
+    }
+
+    .gate-btn:hover { opacity: 0.88; }
+    .gate-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .gate-error {
+      font-size: 14px;
+      color: #ef4444;
+      min-height: 20px;
+    }
+
+    /* sound unlock is just a full clickable screen */
+    #soundGate { cursor: pointer; }
+
+    /* ── Alert container ── */
+    #alertContainer {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .alert {
+      text-align: center;
+      padding: 0 60px;
+      max-width: 900px;
+      width: 100%;
+      opacity: 0;
+      transform: scale(0.92) translateY(16px);
+      transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1);
+    }
+
+    .alert.show {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+
+    .alert.hide {
+      opacity: 0;
+      transform: scale(0.96) translateY(-12px);
+      transition: opacity 0.35s ease-in, transform 0.35s ease-in;
+    }
+
+    .alert-top {
+      font-size: 28px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 18px;
+      line-height: 1.3;
+    }
+
+    .alert-name { color: #fff; font-weight: 700; }
+    .alert-amount { color: #a855f7; font-weight: 800; }
+
+    .alert-message {
+      font-size: 58px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.25;
+      word-break: break-word;
+      text-shadow: 0 0 40px rgba(168,85,247,0.35);
+    }
+
+    .alert.no-message .alert-top { font-size: 24px; margin-bottom: 14px; }
+
+    .alert-amount-big {
+      font-size: 80px;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 0 50px rgba(168,85,247,0.5);
+      line-height: 1;
+    }
+
+    /* Progress line */
+    #progressWrap {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 3px;
+      background: rgba(255,255,255,0.06);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    #progressWrap.active { opacity: 1; }
+
+    #progressFill {
+      height: 100%;
+      background: linear-gradient(90deg, #a855f7, #6366f1);
+      width: 100%;
+      transform-origin: left;
+    }
+
+    @keyframes drainBar {
+      from { transform: scaleX(1); }
+      to   { transform: scaleX(0); }
+    }
+
+    /* Debug */
+    #debug {
+      position: fixed;
+      bottom: 10px; left: 14px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.2);
+      pointer-events: none;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Step 1: Password gate -->
+  <div class="gate" id="passwordGate">
+    <div class="gate-icon">🔐</div>
+    <div class="gate-title">Host Access</div>
+    <input type="password" id="passwordInput" placeholder="รหัสผ่าน" autocomplete="current-password" />
+    <div class="gate-error" id="passwordError"></div>
+    <button class="gate-btn" id="passwordBtn">เข้าสู่ระบบ</button>
+  </div>
+
+  <!-- Step 2: Sound unlock -->
+  <div class="gate hidden" id="soundGate">
+    <div class="gate-icon">🔊</div>
+    <div class="gate-title">คลิกเพื่อเปิดเสียง</div>
+    <div class="gate-sub">จำเป็นต้องคลิกครั้งเดียวก่อนเริ่มใช้งาน</div>
+  </div>
+
+  <!-- Overlay -->
+  <div id="alertContainer"></div>
+  <div id="progressWrap"><div id="progressFill"></div></div>
+  <div id="debug">
+    <span id="dbStatus">⚫ ยังไม่เชื่อมต่อ</span> &nbsp;|&nbsp; คิว: <span id="dbQueue">0</span>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const DISPLAY_DURATION_MS = 7000;
+
+    // ── Auth ─────────────────────────────────────────────────
+    let hostToken = sessionStorage.getItem('hostToken');
+
+    const passwordGate = document.getElementById('passwordGate');
+    const soundGate    = document.getElementById('soundGate');
+    const passwordInput = document.getElementById('passwordInput');
+    const passwordBtn   = document.getElementById('passwordBtn');
+    const passwordError = document.getElementById('passwordError');
+
+    async function submitPassword() {
+      const password = passwordInput.value;
+      if (!password) return;
+      passwordBtn.disabled = true;
+      passwordError.textContent = '';
+
+      try {
+        const res = await fetch('/api/host-auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'เกิดข้อผิดพลาด');
+        hostToken = data.token;
+        sessionStorage.setItem('hostToken', hostToken);
+        showSoundGate();
+      } catch (e) {
+        passwordError.textContent = e.message;
+        passwordBtn.disabled = false;
+      }
+    }
+
+    passwordBtn.addEventListener('click', submitPassword);
+    passwordInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitPassword(); });
+
+    function showSoundGate() {
+      passwordGate.classList.add('hidden');
+      soundGate.classList.remove('hidden');
+    }
+
+    // If already have a token, skip password gate and go straight to sound unlock
+    if (hostToken) showSoundGate();
+
+    // ── Audio ────────────────────────────────────────────────
+    let audioCtx = null;
+
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    function playDonationSound() {
+      try {
+        const ctx = getAudioCtx();
+        const notes = [
+          { freq: 523.25, start: 0.00, dur: 0.4 },
+          { freq: 659.25, start: 0.13, dur: 0.4 },
+          { freq: 783.99, start: 0.26, dur: 0.4 },
+          { freq: 1046.5, start: 0.39, dur: 0.8 },
+        ];
+        notes.forEach(({ freq, start, dur }) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+          gain.gain.setValueAtTime(0, ctx.currentTime + start);
+          gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + start + 0.025);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+          osc.start(ctx.currentTime + start);
+          osc.stop(ctx.currentTime + start + dur + 0.05);
+        });
+      } catch (e) { console.warn('Audio failed:', e); }
+    }
+
+    // Sound gate click: unlock audio then connect socket
+    soundGate.addEventListener('click', () => {
+      getAudioCtx().resume().then(() => {
+        soundGate.classList.add('hidden');
+        connectSocket();
+      });
+    }, { once: true });
+
+    // ── TTS ──────────────────────────────────────────────────
+    async function speak(text) {
+      if (!text) return;
+
+      // Google Translate TTS via server proxy (free)
+      try {
+        const audio = new Audio('/api/tts?text=' + encodeURIComponent(text));
+        await audio.play();
+        return;
+      } catch (_) {}
+
+      // Fallback: Web Speech API
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.lang = 'th-TH';
+      utt.rate = 1.05;
+      utt.pitch = 1.15;
+      const voices = window.speechSynthesis.getVoices();
+      const preferred = voices.find(v => v.lang === 'th-TH' && v.localService)
+                     || voices.find(v => v.lang === 'th-TH')
+                     || voices.find(v => v.lang.startsWith('th'));
+      if (preferred) utt.voice = preferred;
+      window.speechSynthesis.speak(utt);
+    }
+
+    // ── Queue ────────────────────────────────────────────────
+    const queue = [];
+    let busy = false;
+
+    function enqueue(d) { queue.push(d); updateDebug(); if (!busy) processNext(); }
+
+    function processNext() {
+      if (!queue.length) { busy = false; updateDebug(); return; }
+      busy = true; showAlert(queue.shift()); updateDebug();
+    }
+
+    // ── Render ───────────────────────────────────────────────
+    function showAlert(donation) {
+      playDonationSound();
+      if ((donation.message || '').trim()) speak(donation.message.trim());
+
+      const container = document.getElementById('alertContainer');
+      const el = document.createElement('div');
+      const hasMsg = (donation.message || '').trim().length > 0;
+      el.className = 'alert' + (hasMsg ? '' : ' no-message');
+
+      const amount = formatAmount(donation.amount);
+      const name   = `<span class="alert-name">${esc(donation.name || 'ไม่ระบุชื่อ')}</span>`;
+      const amt    = `<span class="alert-amount">${amount}</span>`;
+
+      el.innerHTML = hasMsg
+        ? `<div class="alert-top">${name} โอน ${amt}</div>
+           <div class="alert-message">${esc(donation.message)}</div>`
+        : `<div class="alert-top">${name} ส่งของขวัญ</div>
+           <div class="alert-amount-big">${amount}</div>`;
+
+      container.appendChild(el);
+
+      const fill = document.getElementById('progressFill');
+      const wrap = document.getElementById('progressWrap');
+      fill.style.animation = 'none';
+      fill.getBoundingClientRect();
+      fill.style.animation = `drainBar ${DISPLAY_DURATION_MS}ms linear forwards`;
+      wrap.classList.add('active');
+
+      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+
+      setTimeout(() => {
+        el.classList.remove('show');
+        el.classList.add('hide');
+        wrap.classList.remove('active');
+        el.addEventListener('transitionend', () => { el.remove(); processNext(); }, { once: true });
+      }, DISPLAY_DURATION_MS);
+    }
+
+    // ── Helpers ──────────────────────────────────────────────
+    function formatAmount(amount) {
+      if (!amount) return '฿0';
+      return '฿' + Number(amount).toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+
+    function esc(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function updateDebug() { document.getElementById('dbQueue').textContent = queue.length; }
+
+    // ── Socket ───────────────────────────────────────────────
+    let socket = null;
+
+    function connectSocket() {
+      socket = io();
+
+      socket.on('connect', () => {
+        socket.emit('host:join', { token: hostToken });
+        document.getElementById('dbStatus').textContent = '🟢 เชื่อมต่อแล้ว';
+      });
+
+      socket.on('host:rejected', () => {
+        // Token expired — clear and ask for password again
+        sessionStorage.removeItem('hostToken');
+        hostToken = null;
+        passwordGate.classList.remove('hidden');
+        passwordError.textContent = 'Session หมดอายุ กรุณาเข้าสู่ระบบใหม่';
+        passwordBtn.disabled = false;
+      });
+
+      socket.on('disconnect', () => {
+        document.getElementById('dbStatus').textContent = '🔴 ขาดการเชื่อมต่อ';
+      });
+
+      socket.on('donation:received', (d) => enqueue(d));
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ส่งของขวัญ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Anuphan', 'Segoe UI', system-ui, sans-serif; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f0f1a;
+      color: #e0e0e0;
+    }
+
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 16px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #a855f7, #6366f1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .logo h1 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .disclaimer {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 24px;
+      padding: 12px 14px;
+      background: rgba(251,191,36,0.08);
+      border: 1px solid rgba(251,191,36,0.25);
+      border-radius: 8px;
+      font-size: 13px;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    .disclaimer-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 28px;
+      padding: 10px 14px;
+      background: #0f0f1a;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #888;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #888;
+      transition: background 0.3s;
+      flex-shrink: 0;
+    }
+
+    .status-dot.connected { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+    .status-dot.error { background: #ef4444; }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #aaa;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .field { margin-bottom: 18px; }
+
+    input, textarea {
+      width: 100%;
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #e0e0e0;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, textarea:focus { border-color: #a855f7; }
+
+    .amount-wrapper { position: relative; }
+
+    .amount-wrapper .currency-badge {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      font-weight: 700;
+      color: #a855f7;
+      pointer-events: none;
+    }
+
+    .amount-wrapper input { padding-left: 52px; }
+
+    textarea { resize: vertical; min-height: 90px; }
+
+    .presets {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .preset-btn {
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid #2a2a4a;
+      background: transparent;
+      color: #aaa;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .preset-btn:hover { border-color: #a855f7; color: #a855f7; }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #a855f7, #6366f1);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: 4px;
+    }
+
+    .submit-btn:hover:not(:disabled) { opacity: 0.9; }
+    .submit-btn:active:not(:disabled) { transform: scale(0.98); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Cooldown bar under the button */
+    .cooldown-wrap {
+      margin-top: 10px;
+      height: 4px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.07);
+      overflow: hidden;
+      display: none;
+    }
+
+    .cooldown-wrap.active { display: block; }
+
+    .cooldown-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #a855f7, #6366f1);
+      transition: width 1s linear;
+    }
+
+    .cooldown-label {
+      margin-top: 8px;
+      text-align: center;
+      font-size: 13px;
+      color: #888;
+      display: none;
+    }
+
+    .cooldown-label.active { display: block; }
+
+    .toast {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 15px;
+      text-align: center;
+      display: none;
+    }
+
+    .toast.success {
+      background: rgba(34,197,94,0.15);
+      color: #22c55e;
+      border: 1px solid rgba(34,197,94,0.3);
+      display: block;
+    }
+
+    .toast.error {
+      background: rgba(239,68,68,0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239,68,68,0.3);
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">💜</div>
+      <h1>ส่งของขวัญ</h1>
+    </div>
+
+    <div class="disclaimer">
+      <span class="disclaimer-icon">⚠️</span>
+      <span>นี่คือของขวัญเสมือนจริงเพื่อความสนุกเท่านั้น <strong>ไม่มีการหักเงินจริงทุกกรณี</strong></span>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">กำลังเชื่อมต่อ...</span>
+    </div>
+
+    <form id="donationForm">
+      <div class="field">
+        <label>ชื่อของคุณ</label>
+        <input type="text" id="name" placeholder="ไม่ระบุชื่อ" maxlength="50" />
+      </div>
+
+      <div class="field">
+        <label>จำนวนเงิน (บาท)</label>
+        <div class="amount-wrapper">
+          <span class="currency-badge">฿</span>
+          <input type="number" id="amount" placeholder="0" min="0" step="1" />
+        </div>
+      </div>
+
+      <div class="presets">
+        <button type="button" class="preset-btn" data-amount="20">฿20</button>
+        <button type="button" class="preset-btn" data-amount="50">฿50</button>
+        <button type="button" class="preset-btn" data-amount="100">฿100</button>
+        <button type="button" class="preset-btn" data-amount="200">฿200</button>
+        <button type="button" class="preset-btn" data-amount="500">฿500</button>
+      </div>
+
+      <div class="field">
+        <label>ข้อความ</label>
+        <textarea id="message" placeholder="พิมพ์ข้อความที่ต้องการส่ง..." maxlength="300"></textarea>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">ส่งของขวัญ 🎉</button>
+
+      <div class="cooldown-wrap" id="cooldownWrap">
+        <div class="cooldown-fill" id="cooldownFill"></div>
+      </div>
+      <div class="cooldown-label" id="cooldownLabel"></div>
+    </form>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const COOLDOWN_MS = 60_000;
+    const STORAGE_KEY = 'lastDonationAt';
+
+    const socket     = io();
+    const dot        = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const submitBtn  = document.getElementById('submitBtn');
+    const toast      = document.getElementById('toast');
+    const cooldownWrap  = document.getElementById('cooldownWrap');
+    const cooldownFill  = document.getElementById('cooldownFill');
+    const cooldownLabel = document.getElementById('cooldownLabel');
+
+    let cooldownTimer = null;
+
+    // ── Cooldown ─────────────────────────────────────────────
+    function startCooldown(remainingMs) {
+      clearInterval(cooldownTimer);
+      submitBtn.disabled = true;
+
+      cooldownWrap.classList.add('active');
+      cooldownLabel.classList.add('active');
+
+      function tick() {
+        const last = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
+        const elapsed = Date.now() - last;
+        const remaining = Math.max(0, COOLDOWN_MS - elapsed);
+        const secs = Math.ceil(remaining / 1000);
+
+        const pct = ((COOLDOWN_MS - remaining) / COOLDOWN_MS) * 100;
+        cooldownFill.style.width = pct + '%';
+        cooldownLabel.textContent = `รอ ${secs} วินาทีก่อนส่งครั้งถัดไป`;
+
+        if (remaining <= 0) {
+          clearInterval(cooldownTimer);
+          cooldownWrap.classList.remove('active');
+          cooldownLabel.classList.remove('active');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'ส่งของขวัญ 🎉';
+        }
+      }
+
+      tick();
+      cooldownTimer = setInterval(tick, 1000);
+    }
+
+    function checkCooldownOnLoad() {
+      const last = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
+      if (!last) return;
+      const remaining = COOLDOWN_MS - (Date.now() - last);
+      if (remaining > 0) startCooldown(remaining);
+    }
+
+    // ── Socket ───────────────────────────────────────────────
+    socket.on('connect', () => {
+      dot.className = 'status-dot connected';
+      statusText.textContent = 'เชื่อมต่อแล้ว — พร้อมส่ง';
+      // Don't re-enable button here; let cooldown logic control it
+      const last = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
+      const remaining = COOLDOWN_MS - (Date.now() - last);
+      if (remaining <= 0) submitBtn.disabled = false;
+    });
+
+    socket.on('disconnect', () => {
+      dot.className = 'status-dot error';
+      statusText.textContent = 'ขาดการเชื่อมต่อ — กำลังเชื่อมต่อใหม่...';
+      submitBtn.disabled = true;
+    });
+
+    socket.on('donation:confirmed', () => {
+      showToast('ส่งของขวัญสำเร็จแล้ว! 🎉', 'success');
+      document.getElementById('donationForm').reset();
+      localStorage.setItem(STORAGE_KEY, Date.now().toString());
+      startCooldown(COOLDOWN_MS);
+    });
+
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('amount').value = btn.dataset.amount;
+      });
+    });
+
+    document.getElementById('donationForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name    = document.getElementById('name').value.trim() || 'ไม่ระบุชื่อ';
+      const amount  = parseFloat(document.getElementById('amount').value) || 0;
+      const message = document.getElementById('message').value.trim();
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'กำลังส่ง...';
+
+      socket.emit('donation:send', { name, amount, currency: 'THB', message });
+    });
+
+    function showToast(msg, type) {
+      toast.textContent = msg;
+      toast.className = `toast ${type}`;
+      setTimeout(() => { toast.className = 'toast'; }, 4000);
+    }
+
+    // Check cooldown immediately on page load
+    checkCooldownOnLoad();
+  </script>
+</body>
+</html>
