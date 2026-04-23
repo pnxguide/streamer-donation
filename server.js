@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const https = require('https');
 const crypto = require('crypto');
 const { Server } = require('socket.io');
 
@@ -32,26 +33,28 @@ app.use(express.static('public'));
 app.use(express.json());
 
 // TTS proxy — Google Translate TTS (free, no API key)
-app.get('/api/tts', async (req, res) => {
+app.get('/api/tts', (req, res) => {
   const text = String(req.query.text || '').slice(0, 200);
   if (!text) return res.status(400).end();
 
-  const url = 'https://translate.google.com/translate_tts?ie=UTF-8'
-    + '&client=tw-ob'
-    + '&tl=th'
-    + `&q=${encodeURIComponent(text)}`;
+  const path = '/translate_tts?ie=UTF-8&client=tw-ob&tl=th&q='
+    + encodeURIComponent(text);
 
-  try {
-    const upstream = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-    });
-    if (!upstream.ok) return res.status(502).end();
+  const options = {
+    hostname: 'translate.google.com',
+    path,
+    headers: { 'User-Agent': 'Mozilla/5.0' },
+  };
+
+  https.get(options, (upstream) => {
+    if (upstream.statusCode !== 200) {
+      res.status(502).end();
+      upstream.resume();
+      return;
+    }
     res.setHeader('Content-Type', 'audio/mpeg');
-    const buf = await upstream.arrayBuffer();
-    res.end(Buffer.from(buf));
-  } catch (e) {
-    res.status(500).end();
-  }
+    upstream.pipe(res);
+  }).on('error', () => res.status(500).end());
 });
 
 // Host auth endpoint
