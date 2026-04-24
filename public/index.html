@@ -113,6 +113,24 @@
 
     .field { margin-bottom: 18px; }
 
+    .field-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+
+    .field-header label { margin-bottom: 0; }
+
+    .char-count {
+      font-size: 12px;
+      color: #555;
+      transition: color 0.2s;
+    }
+
+    .char-count.warning { color: #f59e0b; }
+    .char-count.danger  { color: #ef4444; }
+
     input, textarea {
       width: 100%;
       background: #0f0f1a;
@@ -256,8 +274,11 @@
 
     <form id="donationForm">
       <div class="field">
-        <label>ชื่อของคุณ</label>
-        <input type="text" id="name" placeholder="ไม่ระบุชื่อ" maxlength="50" />
+        <div class="field-header">
+          <label>ชื่อของคุณ</label>
+          <span class="char-count" id="nameCount">16</span>
+        </div>
+        <input type="text" id="name" placeholder="ไม่ระบุชื่อ" maxlength="16" />
       </div>
 
       <div class="field">
@@ -277,8 +298,11 @@
       </div>
 
       <div class="field">
-        <label>ข้อความ</label>
-        <textarea id="message" placeholder="พิมพ์ข้อความที่ต้องการส่ง..." maxlength="300"></textarea>
+        <div class="field-header">
+          <label>ข้อความ</label>
+          <span class="char-count" id="messageCount">64</span>
+        </div>
+        <textarea id="message" placeholder="พิมพ์ข้อความที่ต้องการส่ง..." maxlength="64"></textarea>
       </div>
 
       <button type="submit" class="submit-btn" id="submitBtn">ส่งของขวัญ 🎉</button>
@@ -294,6 +318,20 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    // ── Character counters (run first, no dependencies) ──────
+    function initCounter(inputId, countId, max) {
+      const el = document.getElementById(inputId);
+      const counter = document.getElementById(countId);
+      el.addEventListener('input', () => {
+        const left = max - el.value.length;
+        counter.textContent = left;
+        counter.className = 'char-count' + (left <= 0 ? ' danger' : left <= Math.ceil(max * 0.2) ? ' warning' : '');
+      });
+    }
+
+    initCounter('name', 'nameCount', 16);
+    initCounter('message', 'messageCount', 64);
+
     const COOLDOWN_MS = 60_000;
     const STORAGE_KEY = 'lastDonationAt';
 

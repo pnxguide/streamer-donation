@@ -82,9 +82,9 @@ io.on('connection', (socket) => {
   socket.on('donation:send', (data) => {
     const donation = {
       id: Date.now(),
-      name: String(data.name || 'ไม่ระบุชื่อ').slice(0, 50),
+      name: String(data.name || 'ไม่ระบุชื่อ').slice(0, 16),
       amount: Math.max(0, parseFloat(data.amount) || 0),
-      message: String(data.message || '').slice(0, 300),
+      message: String(data.message || '').slice(0, 64),
       currency: 'THB',
       timestamp: new Date().toISOString(),
     };
