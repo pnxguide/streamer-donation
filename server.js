@@ -70,6 +70,7 @@ app.post('/api/host-auth', (req, res) => {
 });
 
 let hostCount = 0;
+const hostSockets = new Set(); // track host socket IDs explicitly
 
 io.on('connection', (socket) => {
   // Immediately tell the new client the current host count
@@ -81,6 +82,7 @@ io.on('connection', (socket) => {
       return;
     }
     socket.join('hosts');
+    hostSockets.add(socket.id);
     hostCount++;
     io.emit('host:count', hostCount);
   });
@@ -99,7 +101,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    if (socket.rooms.has('hosts')) {
+    if (hostSockets.has(socket.id)) {
+      hostSockets.delete(socket.id);
       hostCount = Math.max(0, hostCount - 1);
       io.emit('host:count', hostCount);
     }

@@ -305,7 +305,7 @@
         <textarea id="message" placeholder="พิมพ์ข้อความที่ต้องการส่ง..." maxlength="64"></textarea>
       </div>
 
-      <button type="submit" class="submit-btn" id="submitBtn">ส่งของขวัญ 🎉</button>
+      <button type="submit" class="submit-btn" id="submitBtn" disabled>ส่งของขวัญ 🎉</button>
 
       <div class="cooldown-wrap" id="cooldownWrap">
         <div class="cooldown-fill" id="cooldownFill"></div>
@@ -316,7 +316,15 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Must be defined before socket.io.js loads so onerror can call it
+    function socketLoadFailed() {
+      document.getElementById('statusDot').className = 'status-dot error';
+      document.getElementById('statusText').textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+      document.getElementById('submitBtn').disabled = true;
+    }
+  </script>
+  <script src="/socket.io/socket.io.js" onerror="socketLoadFailed()"></script>
   <script>
     // ── Character counters (run first, no dependencies) ──────
     function initCounter(inputId, countId, max) {
@@ -335,6 +343,7 @@
     const COOLDOWN_MS = 60_000;
     const STORAGE_KEY = 'lastDonationAt';
 
+    if (typeof io === 'undefined') { socketLoadFailed(); throw new Error('socket.io not loaded'); }
     const socket     = io();
     const dot        = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
@@ -399,6 +408,13 @@
     socket.on('disconnect', () => {
       dot.className = 'status-dot error';
       statusText.textContent = 'ขาดการเชื่อมต่อ — กำลังเชื่อมต่อใหม่...';
+      hostOnline = false;
+      submitBtn.disabled = true;
+    });
+
+    socket.on('connect_error', () => {
+      dot.className = 'status-dot error';
+      statusText.textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
       hostOnline = false;
       submitBtn.disabled = true;
     });
