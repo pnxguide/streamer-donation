@@ -65,54 +65,73 @@
     .gate-btn:disabled { opacity: 0.45; cursor: not-allowed; }
     .gate-error { font-size: 14px; color: #ef4444; min-height: 20px; }
 
+    /* ── Gate input responsive ── */
+    .gate input[type="password"],
+    .gate-btn {
+      width: min(280px, 90vw);
+    }
+
     /* ── Main layout ── */
     header {
       background: #111122;
       border-bottom: 1px solid #1e1e3a;
-      padding: 16px 24px;
+      padding: 14px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
-    .header-left { display: flex; align-items: center; gap: 10px; }
+    .header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
 
     .header-icon {
-      width: 32px; height: 32px;
+      width: 32px; height: 32px; flex-shrink: 0;
       background: linear-gradient(135deg, #a855f7, #6366f1);
       border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
       font-size: 16px;
     }
 
-    header h1 { font-size: 18px; font-weight: 700; color: #fff; }
+    header h1 {
+      font-size: 16px; font-weight: 700; color: #fff;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
 
     .header-status {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 13px; color: #888;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; color: #888; flex-shrink: 0;
     }
 
     .status-dot {
-      width: 8px; height: 8px; border-radius: 50%; background: #888;
+      width: 8px; height: 8px; border-radius: 50%; background: #888; flex-shrink: 0;
     }
 
     .status-dot.connected { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
     .status-dot.error     { background: #ef4444; }
 
+    /* hide status label on very small screens, keep dot */
+    @media (max-width: 360px) {
+      .header-status span { display: none; }
+    }
+
     main {
       max-width: 720px;
       margin: 0 auto;
-      padding: 32px 20px;
+      padding: 20px 16px;
+      padding-bottom: calc(20px + env(safe-area-inset-bottom));
     }
 
     .queue-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
-    .queue-title { font-size: 16px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; }
+    .queue-title { font-size: 13px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; }
     .queue-count {
       background: #a855f7;
       color: #fff;
@@ -137,10 +156,10 @@
       background: #111122;
       border: 1px solid #1e1e3a;
       border-radius: 14px;
-      padding: 18px 20px;
+      padding: 16px;
       margin-bottom: 12px;
       display: flex;
-      gap: 16px;
+      gap: 14px;
       align-items: flex-start;
       animation: slideIn 0.3s ease;
     }
@@ -151,10 +170,10 @@
     }
 
     .card-avatar {
-      width: 42px; height: 42px; border-radius: 50%;
+      width: 40px; height: 40px; border-radius: 50%;
       background: linear-gradient(135deg, #a855f7, #6366f1);
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px; font-weight: 700; color: #fff;
+      font-size: 17px; font-weight: 700; color: #fff;
       flex-shrink: 0; text-transform: uppercase;
     }
 
@@ -163,7 +182,7 @@
     .card-top {
       display: flex; align-items: baseline;
       justify-content: space-between; gap: 8px;
-      margin-bottom: 6px;
+      margin-bottom: 6px; flex-wrap: wrap;
     }
 
     .card-name { font-size: 15px; font-weight: 700; color: #fff; }
@@ -171,7 +190,7 @@
 
     .card-message {
       font-size: 15px; color: #ccc; line-height: 1.5;
-      word-break: break-word; margin-bottom: 14px;
+      word-break: break-word; margin-bottom: 10px;
     }
 
     .card-message.no-message { color: #555; font-style: italic; }
@@ -181,13 +200,16 @@
     .card-actions { display: flex; gap: 8px; }
 
     .btn-approve, .btn-reject {
-      padding: 8px 20px;
+      flex: 1;
+      padding: 11px 12px;
       border-radius: 8px;
       border: none;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 700;
       cursor: pointer;
+      min-height: 44px;
       transition: opacity 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .btn-approve {
@@ -201,8 +223,12 @@
       border: 1px solid rgba(239,68,68,0.3);
     }
 
-    .btn-approve:hover, .btn-reject:hover { opacity: 0.85; }
-    .btn-approve:active, .btn-reject:active { transform: scale(0.97); }
+    .btn-approve:active { opacity: 0.8; transform: scale(0.97); }
+    .btn-reject:active  { opacity: 0.8; transform: scale(0.97); }
+
+    @media (hover: hover) {
+      .btn-approve:hover, .btn-reject:hover { opacity: 0.85; }
+    }
 
     .donation-card.removing {
       animation: fadeOut 0.25s ease forwards;
