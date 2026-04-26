@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — ตรวจสอบข้อความ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Anuphan', system-ui, sans-serif; }
+
+    body {
+      min-height: 100vh;
+      background: #0a0a14;
+      color: #e0e0e0;
+    }
+
+    /* ── Password gate ── */
+    .gate {
+      position: fixed;
+      inset: 0;
+      background: #0a0a14;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 9999;
+    }
+
+    .gate.hidden { display: none; }
+    .gate-icon { font-size: 44px; }
+    .gate-title { font-size: 22px; font-weight: 700; color: #fff; }
+
+    .gate input[type="password"] {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 12px 18px;
+      color: #fff;
+      font-size: 17px;
+      width: 280px;
+      outline: none;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+
+    .gate input:focus { border-color: #a855f7; }
+
+    .gate-btn {
+      background: linear-gradient(135deg, #a855f7, #6366f1);
+      border: none;
+      border-radius: 10px;
+      padding: 12px 0;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 280px;
+      transition: opacity 0.2s;
+    }
+
+    .gate-btn:hover { opacity: 0.88; }
+    .gate-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .gate-error { font-size: 14px; color: #ef4444; min-height: 20px; }
+
+    /* ── Main layout ── */
+    header {
+      background: #111122;
+      border-bottom: 1px solid #1e1e3a;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 10px; }
+
+    .header-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, #a855f7, #6366f1);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+
+    header h1 { font-size: 18px; font-weight: 700; color: #fff; }
+
+    .header-status {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: #888;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #888;
+    }
+
+    .status-dot.connected { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+    .status-dot.error     { background: #ef4444; }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    .queue-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .queue-title { font-size: 16px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; }
+    .queue-count {
+      background: #a855f7;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 20px;
+      padding: 2px 10px;
+    }
+
+    /* ── Empty state ── */
+    #emptyState {
+      text-align: center;
+      padding: 60px 0;
+      color: #444;
+    }
+
+    #emptyState .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    #emptyState p { font-size: 15px; }
+
+    /* ── Donation card ── */
+    .donation-card {
+      background: #111122;
+      border: 1px solid #1e1e3a;
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: linear-gradient(135deg, #a855f7, #6366f1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; color: #fff;
+      flex-shrink: 0; text-transform: uppercase;
+    }
+
+    .card-body { flex: 1; min-width: 0; }
+
+    .card-top {
+      display: flex; align-items: baseline;
+      justify-content: space-between; gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .card-name { font-size: 15px; font-weight: 700; color: #fff; }
+    .card-amount { font-size: 15px; font-weight: 800; color: #a855f7; white-space: nowrap; }
+
+    .card-message {
+      font-size: 15px; color: #ccc; line-height: 1.5;
+      word-break: break-word; margin-bottom: 14px;
+    }
+
+    .card-message.no-message { color: #555; font-style: italic; }
+
+    .card-time { font-size: 12px; color: #555; margin-bottom: 14px; }
+
+    .card-actions { display: flex; gap: 8px; }
+
+    .btn-approve, .btn-reject {
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .btn-approve {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff;
+    }
+
+    .btn-reject {
+      background: rgba(239,68,68,0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239,68,68,0.3);
+    }
+
+    .btn-approve:hover, .btn-reject:hover { opacity: 0.85; }
+    .btn-approve:active, .btn-reject:active { transform: scale(0.97); }
+
+    .donation-card.removing {
+      animation: fadeOut 0.25s ease forwards;
+    }
+
+    @keyframes fadeOut {
+      to { opacity: 0; transform: scale(0.97); height: 0; padding: 0; margin: 0; overflow: hidden; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Password gate -->
+  <div class="gate" id="gate">
+    <div class="gate-icon">🛡️</div>
+    <div class="gate-title">Admin — ตรวจสอบข้อความ</div>
+    <input type="password" id="passwordInput" placeholder="รหัสผ่าน Admin" />
+    <div class="gate-error" id="gateError"></div>
+    <button class="gate-btn" id="gateBtn">เข้าสู่ระบบ</button>
+  </div>
+
+  <!-- Main UI -->
+  <header>
+    <div class="header-left">
+      <div class="header-icon">🛡️</div>
+      <h1>ตรวจสอบข้อความ</h1>
+    </div>
+    <div class="header-status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">กำลังเชื่อมต่อ...</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="queue-header">
+      <span class="queue-title">รอการอนุมัติ</span>
+      <span class="queue-count" id="queueCount">0</span>
+    </div>
+
+    <div id="emptyState">
+      <div class="empty-icon">✅</div>
+      <p>ไม่มีข้อความรอการอนุมัติ</p>
+    </div>
+
+    <div id="queue"></div>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let adminToken = sessionStorage.getItem('adminToken');
+    let socket = null;
+
+    // ── Password gate ────────────────────────────────────────
+    const gate          = document.getElementById('gate');
+    const passwordInput = document.getElementById('passwordInput');
+    const gateBtn       = document.getElementById('gateBtn');
+    const gateError     = document.getElementById('gateError');
+
+    async function submitPassword() {
+      const password = passwordInput.value;
+      if (!password) return;
+      gateBtn.disabled = true;
+      gateError.textContent = '';
+      try {
+        const res  = await fetch('/api/admin-auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'เกิดข้อผิดพลาด');
+        adminToken = data.token;
+        sessionStorage.setItem('adminToken', adminToken);
+        gate.classList.add('hidden');
+        connectSocket();
+      } catch (e) {
+        gateError.textContent = e.message;
+        gateBtn.disabled = false;
+      }
+    }
+
+    gateBtn.addEventListener('click', submitPassword);
+    passwordInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitPassword(); });
+
+    if (adminToken) {
+      gate.classList.add('hidden');
+      connectSocket();
+    }
+
+    // ── Socket ───────────────────────────────────────────────
+    function connectSocket() {
+      socket = io();
+
+      socket.on('connect', () => {
+        socket.emit('admin:join', { token: adminToken });
+        document.getElementById('statusDot').className = 'status-dot connected';
+        document.getElementById('statusText').textContent = 'เชื่อมต่อแล้ว';
+      });
+
+      socket.on('admin:rejected', () => {
+        sessionStorage.removeItem('adminToken');
+        adminToken = null;
+        gate.classList.remove('hidden');
+        gateError.textContent = 'Session หมดอายุ กรุณาเข้าสู่ระบบใหม่';
+        gateBtn.disabled = false;
+        socket.disconnect();
+      });
+
+      socket.on('disconnect', () => {
+        document.getElementById('statusDot').className = 'status-dot error';
+        document.getElementById('statusText').textContent = 'ขาดการเชื่อมต่อ';
+      });
+
+      socket.on('moderation:queue', (queue) => {
+        renderQueue(queue);
+      });
+    }
+
+    // ── Render queue ─────────────────────────────────────────
+    function renderQueue(queue) {
+      const container = document.getElementById('queue');
+      const empty     = document.getElementById('emptyState');
+      const countEl   = document.getElementById('queueCount');
+
+      countEl.textContent = queue.length;
+      empty.style.display = queue.length === 0 ? 'block' : 'none';
+
+      // Build a map of existing cards
+      const existing = new Map();
+      container.querySelectorAll('.donation-card').forEach(el => {
+        existing.set(el.dataset.id, el);
+      });
+
+      const incoming = new Set(queue.map(d => d.id));
+
+      // Remove cards no longer in queue
+      existing.forEach((el, id) => {
+        if (!incoming.has(id)) removeCard(el);
+      });
+
+      // Add new cards (prepend so newest is on top)
+      queue.slice().reverse().forEach(donation => {
+        if (!existing.has(donation.id)) {
+          container.prepend(buildCard(donation));
+        }
+      });
+    }
+
+    function buildCard(donation) {
+      const card = document.createElement('div');
+      card.className = 'donation-card';
+      card.dataset.id = donation.id;
+
+      const initial    = (donation.name || '?')[0].toUpperCase();
+      const amountStr  = '฿' + Number(donation.amount).toLocaleString('th-TH');
+      const hasMessage = (donation.message || '').trim().length > 0;
+      const timeStr    = new Date(donation.timestamp).toLocaleTimeString('th-TH');
+
+      card.innerHTML = `
+        <div class="card-avatar">${initial}</div>
+        <div class="card-body">
+          <div class="card-top">
+            <span class="card-name">${esc(donation.name)}</span>
+            <span class="card-amount">${amountStr}</span>
+          </div>
+          <div class="card-message ${hasMessage ? '' : 'no-message'}">
+            ${hasMessage ? esc(donation.message) : '(ไม่มีข้อความ)'}
+          </div>
+          <div class="card-time">${timeStr}</div>
+          <div class="card-actions">
+            <button class="btn-approve">✓ อนุมัติ</button>
+            <button class="btn-reject">✕ ปฏิเสธ</button>
+          </div>
+        </div>
+      `;
+
+      card.querySelector('.btn-approve').addEventListener('click', () => {
+        removeCard(card, () => socket.emit('moderation:approve', { id: donation.id }));
+      });
+
+      card.querySelector('.btn-reject').addEventListener('click', () => {
+        removeCard(card, () => socket.emit('moderation:reject', { id: donation.id }));
+      });
+
+      return card;
+    }
+
+    function removeCard(card, callback) {
+      card.classList.add('removing');
+      card.addEventListener('animationend', () => {
+        card.remove();
+        if (callback) callback();
+      }, { once: true });
+    }
+
+    function esc(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+</body>
+</html>

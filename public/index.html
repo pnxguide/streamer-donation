@@ -340,7 +340,7 @@
     initCounter('name', 'nameCount', 16);
     initCounter('message', 'messageCount', 64);
 
-    const COOLDOWN_MS = 60_000;
+    const COOLDOWN_MS = 30_000;
     const STORAGE_KEY = 'lastDonationAt';
 
     if (typeof io === 'undefined') { socketLoadFailed(); throw new Error('socket.io not loaded'); }
@@ -431,7 +431,7 @@
       updateButton();
     });
 
-    socket.on('donation:confirmed', () => {
+    socket.on('donation:queued', () => {
       showToast('ส่งของขวัญสำเร็จแล้ว! 🎉', 'success');
       document.getElementById('donationForm').reset();
       localStorage.setItem(STORAGE_KEY, Date.now().toString());
