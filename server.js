@@ -6,7 +6,10 @@ const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  pingInterval: 5000,   // send ping every 5s
+  pingTimeout: 4000,    // disconnect if no pong within 4s
+});
 
 const PORT = process.env.PORT || 3000;
 const HOST_PASSWORD = process.env.HOST_PASSWORD || 'admin';
