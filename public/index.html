@@ -345,6 +345,13 @@
     const cooldownLabel = document.getElementById('cooldownLabel');
 
     let cooldownTimer = null;
+    let hostOnline = false;
+
+    function updateButton() {
+      const last = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
+      const inCooldown = (COOLDOWN_MS - (Date.now() - last)) > 0;
+      submitBtn.disabled = !hostOnline || inCooldown;
+    }
 
     // ── Cooldown ─────────────────────────────────────────────
     function startCooldown(remainingMs) {
@@ -368,8 +375,8 @@
           clearInterval(cooldownTimer);
           cooldownWrap.classList.remove('active');
           cooldownLabel.classList.remove('active');
-          submitBtn.disabled = false;
           submitBtn.textContent = 'ส่งของขวัญ 🎉';
+          updateButton();
         }
       }
 
@@ -386,18 +393,26 @@
 
     // ── Socket ───────────────────────────────────────────────
     socket.on('connect', () => {
-      dot.className = 'status-dot connected';
-      statusText.textContent = 'เชื่อมต่อแล้ว — พร้อมส่ง';
-      // Don't re-enable button here; let cooldown logic control it
-      const last = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
-      const remaining = COOLDOWN_MS - (Date.now() - last);
-      if (remaining <= 0) submitBtn.disabled = false;
+      updateButton();
     });
 
     socket.on('disconnect', () => {
       dot.className = 'status-dot error';
       statusText.textContent = 'ขาดการเชื่อมต่อ — กำลังเชื่อมต่อใหม่...';
+      hostOnline = false;
       submitBtn.disabled = true;
+    });
+
+    socket.on('host:count', (count) => {
+      hostOnline = count > 0;
+      if (hostOnline) {
+        dot.className = 'status-dot connected';
+        statusText.textContent = 'เชื่อมต่อแล้ว — พร้อมส่ง';
+      } else {
+        dot.className = 'status-dot error';
+        statusText.textContent = 'ยังไม่มีโฮสต์ออนไลน์';
+      }
+      updateButton();
     });
 
     socket.on('donation:confirmed', () => {
