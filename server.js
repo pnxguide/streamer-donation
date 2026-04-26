@@ -69,6 +69,9 @@ app.post('/api/host-auth', (req, res) => {
 let hostCount = 0;
 
 io.on('connection', (socket) => {
+  // Immediately tell the new client the current host count
+  socket.emit('host:count', hostCount);
+
   socket.on('host:join', ({ token } = {}) => {
     if (!isValidToken(token)) {
       socket.emit('host:rejected');
